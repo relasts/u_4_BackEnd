@@ -40,7 +40,7 @@
       exit();
     }
   }
-  
+
   $errors = '';
   $fio = (isset($_POST['fio']) ? $_POST['fio'] : '');
   $phone = (isset($_POST['phone']) ? $_POST['phone'] : '');
@@ -93,22 +93,29 @@
     errp($errors);
   }
 
-  // $db = new PDO('mysql:host=localhost;dbname=u67404', 'u67404', '4971288',
-  //   [PDO::ATTR_PERSISTENT => true, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+  $db = new PDO('mysql:host=localhost;dbname=u67404', 'u67404', '4971288',
+     [PDO::ATTR_PERSISTENT => true, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
   
   $inQuery = implode(',', array_fill(0, count($like_lang), '?'));
 
-  $db = new PDO('mysql:host=localhost;dbname=u67404', 'root', '');
-  $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  $dbLangs = $db->prepare("SELECT id, name FROM languages WHERE name IN ($inQuery)");
-  foreach ($like_lang as $key => $value) {
-    $dbLangs->bindValue(($key+1), $value);
+  //$db = new PDO('mysql:host=localhost;dbname=u67404', 'root', '');
+  //$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  
+  try {
+    $dbLangs = $db->prepare("SELECT id, name FROM languages WHERE name IN ($inQuery)");
+    foreach ($like_lang as $key => $value) {
+      $dbLangs->bindValue(($key+1), $value);
+    }
+    $dbLangs->execute();
+    $languages = $dbLangs->fetchAll(PDO::FETCH_ASSOC);
   }
-  $dbLangs->execute();
-  echo $like_lang_s;
-  $languages = $dbLangs->fetchAll(PDO::FETCH_ASSOC);
-  echo $dbLangs->rowCount();
-  print_r($languages);
+  catch(PDOException $e){
+    print('Error : ' . $e->getMessage());
+    exit();
+  }
+
+  echo $dbLangs->rowCount().'**'.count($like_lang);
+  
   if($dbLangs->rowCount() != count($like_lang)){
     $errors = 'Неверно выбраны языки';
   }
