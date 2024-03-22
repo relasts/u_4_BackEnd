@@ -72,7 +72,7 @@
   }
   elseif(count(explode(" ", $fio)) < 2){
     $errors = 'Неверный формат ФИО';
-  }
+  } 
   elseif(strlen($phone) != 11){
     $errors = 'Неверное значение поля "Телефон"';
   }
