@@ -67,8 +67,11 @@
     print('пустое поле фио');
   }
 
-  if(strlen($fio) > 255 || count(explode(" ", $fio)) < 2){
+  if(strlen($fio) > 255){
     $errors = 'Длина поля "ФИО" > 255 символов';
+  }
+  elseif(count(explode(" ", $fio)) < 2){
+    $errors = 'Неверный формат ФИО';
   }
   elseif(strlen($phone) != 11){
     $errors = 'Неверное значение поля "Телефон"';
