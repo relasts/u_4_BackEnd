@@ -1,4 +1,14 @@
-
+<!DOCTYPE html>
+  <html lang="ru">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="libs/bootstrap-4.0.0-dist/css/bootstrap.min.css">
+      <link rel="stylesheet" href="style8.css">
+      <script src="libs/jquery-3.4.1.min.js"></script>
+      <title>Задание 8</title>
+  </head>
+  <body>
 <?php
   header('Content-Type: text/html; charset=UTF-8');
 
@@ -60,10 +70,10 @@
   if(strlen($fio) > 255){
     $errors = 'Длина поля "ФИО" > 255 символов';
   }
-  elseif(count(explode(" ", $fio)) < 2 || !preg_match('/^([а-яa-zё]+-?[а-яa-zё]+)( [а-яa-zё]+-?[а-яa-zё]+){1,2}$/Diu', $fio)){
+  elseif(count(explode(" ", $fio)) < 2){
     $errors = 'Неверный формат ФИО';
   } 
-  elseif(strlen($phone) != 11 || !preg_match('/^\d{11}$/', $phone)){
+  elseif(strlen($phone) != 11){
     $errors = 'Неверное значение поля "Телефон"';
   }
   elseif(strlen($email) > 255){
@@ -86,14 +96,14 @@
     errp($errors);
   }
 
-  // $db = new PDO('mysql:host=localhost;dbname=u67404', 'u67404', '4971288',
-  //    [PDO::ATTR_PERSISTENT => true, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-  
-  $db = new PDO('mysql:host=localhost;dbname=u67404', 'root', '');
-  $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  $db = new PDO('mysql:host=localhost;dbname=u67404', 'u67404', '4971288',
+     [PDO::ATTR_PERSISTENT => true, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
   
   $inQuery = implode(',', array_fill(0, count($like_lang), '?'));
 
+  //$db = new PDO('mysql:host=localhost;dbname=u67404', 'root', '');
+  //$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  
   try {
     $dbLangs = $db->prepare("SELECT id, name FROM languages WHERE name IN ($inQuery)");
     foreach ($like_lang as $key => $value) {
