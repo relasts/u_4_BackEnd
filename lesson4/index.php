@@ -6,7 +6,7 @@
     // if($del_val) setcookie($cook.'_value', '', time() - 30 * 24 * 60 * 60);
   }
   
-  $db = '';
+  $db;
 
   function conn(){
     global $db;
