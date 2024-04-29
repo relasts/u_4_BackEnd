@@ -1,167 +1,178 @@
-<!DOCTYPE html>
-  <html lang="ru">
-  <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link rel="stylesheet" href="libs/bootstrap-4.0.0-dist/css/bootstrap.min.css">
-      <link rel="stylesheet" href="style8.css">
-      <script src="libs/jquery-3.4.1.min.js"></script>
-      <title>Задание 8</title>
-  </head>
-  <body>
 <?php
   header('Content-Type: text/html; charset=UTF-8');
+  
+  function del_cook($cook, $del_val = 0){
+    setcookie($cook.'_error', '', time() - 30 * 24 * 60 * 60);
+    // if($del_val) setcookie($cook.'_value', '', time() - 30 * 24 * 60 * 60);
+  }
+  
+  $db = '';
+
+  function conn(){
+    global $db;
+    include('connection.php');
+  }
 
   if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    if (!empty($_GET['save'])) {
-      // Если есть параметр save, то выводим сообщение пользователю.
-      print('<div class="message">Спасибо, данные сохранены.</div>');
+    $fio = (!empty($_COOKIE['fio_error']) ? $_COOKIE['fio_error'] : '');
+    $phone = (!empty($_COOKIE['phone_error']) ? $_COOKIE['phone_error'] : '');
+    $email = (!empty($_COOKIE['email_error']) ? $_COOKIE['email_error'] : '');
+    $birthday = (!empty($_COOKIE['birthday_error']) ? strtotime($_COOKIE['birthday_error']) : '');
+    $gender = (!empty($_COOKIE['gender_error']) ? $_COOKIE['gender_error'] : '');
+    $like_lang = (!empty($_COOKIE['like_lang_error']) ? $_COOKIE['like_lang_error'] : '');
+    $biography = (!empty($_COOKIE['biography_error']) ? $_COOKIE['biography_error'] : '');
+    $oznakomlen = (!empty($_COOKIE['oznakomlen_error']) ? $_COOKIE['oznakomlen_error'] : '');
+
+    $errors = array();
+    $messages = array();
+    $values = array();
+    
+    function val_empty($enName, $val){
+      global $errors, $values, $messages;
+
+      $errors[$enName] = !empty($_COOKIE[$enName.'_error']);
+      $messages[$enName] = "<div class='messageError'>$val</div>";
+      $values[$enName] = empty($_COOKIE[$enName.'_value']) ? '' : $_COOKIE[$enName.'_value'];
+      del_cook($enName);
+      return;
     }
+    
+    if (!empty($_COOKIE['save'])) {
+      setcookie('save', '', 100000);
+      // Если есть параметр save, то выводим сообщение пользователю.
+      $messages['success'] = '<div class="message">Спасибо, данные сохранены.</div>';
+    }
+       
+    val_empty('fio', $fio);
+    val_empty('phone', $phone);
+    val_empty('email', $email);
+    val_empty('birthday', $birthday);
+    val_empty('gender', $gender);
+    val_empty('like_lang', $like_lang);
+    val_empty('biography', $biography);
+    val_empty('oznakomlen', $oznakomlen);
+
+    $like_langsa = explode(',', $values['like_lang']);
+
     include('form.php');
-    exit();
   }
+  else{ //POST
+    $fio = (!empty($_POST['fio']) ? $_POST['fio'] : '');
+    $phone = (!empty($_POST['phone']) ? $_POST['phone'] : '');
+    $email = (!empty($_POST['email']) ? $_POST['email'] : '');
+    $birthday = (!empty($_POST['birthday']) ? strtotime($_POST['birthday']) : '');
+    $gender = (!empty($_POST['gender']) ? $_POST['gender'] : '');
+    $like_lang = (!empty($_POST['like_lang']) ? $_POST['like_lang'] : '');
+    $biography = (!empty($_POST['biography']) ? $_POST['biography'] : '');
+    $oznakomlen = (!empty($_POST['oznakomlen']) ? $_POST['oznakomlen'] : '');
+    $error = false;
 
-  function errp($error){
-    print("<div class='messageError'>$error</div>");
-    exit();
-  }
+    $phone1 = preg_replace('/\D/', '', $phone);
 
-  function val_empty($val, $name, $o = 0){
-    if(empty($val)){
-      if($o == 0){
-        errp("Заполните поле $name.<br/>");
+    function val_empty($cook, $comment, $usl){
+      global $error;
+      $res = false;
+      $setVal = $_POST[$cook];
+      if ($usl) {
+        setcookie($cook.'_error', $comment, time() + 24 * 60 * 60); //сохраняем на сутки
+        $error = true;
+        $res = true;
       }
-      if($o == 1){
-        errp("Выберите $name.<br/>");
+      
+      if($cook == 'like_lang'){
+        global $like_lang;
+        $setVal = ($like_lang != '') ? implode(",", $like_lang) : '';
       }
-      if($o == 2){
-        errp("ознакомьтесь с контрактом<br/>");
+      
+      setcookie($cook.'_value', $setVal, time() + 30 * 24 * 60 * 60); //сохраняем на месяц
+      return $res;
+    }
+    
+    if(!val_empty('fio', 'Заполните поле', empty($fio))){
+      if(!val_empty('fio', 'Длина поля > 255 символов', strlen($fio) > 255)){
+        val_empty('fio', 'Поле не соответствует требованиям: <i>Фаимлмя Имя (Отчество)</i>, латиницей', !preg_match('/^([а-яё]+-?[а-яё]+)( [а-яё]+-?[а-яё]+){1,2}$/Diu', $fio));
       }
+    }
+    if(!val_empty('phone', 'Заполните поле', empty($phone))){
+      if(!val_empty('phone', 'Длина поля некорректна', strlen($phone) != 11)){
+        val_empty('phone', 'Поле должен содержать только цифры"', ($phone != $phone1));
+      }
+    }
+    if(!val_empty('email', 'Заполните поле', empty($email))){
+      if(!val_empty('email', 'Длина поля > 255 символов', strlen($email) > 255)){
+        val_empty('email', 'Поле не соответствует требованию example@mail.ru', !preg_match('/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/', $email));
+      }
+    }
+    if(!val_empty('birthday', "Выберите дату рождения", empty($birthday))){
+      val_empty('birthday', "Неверно введена дата рождения, дата больше настоящей", (strtotime("now") < $birthday));
+    }
+    val_empty('gender', "Выберите пол", (empty($gender) || !preg_match('/^(male|female)$/', $gender)));
+    if(!val_empty('like_lang', "Выберите хотя бы один язык", empty($like_lang))){
+      conn();
+      try {
+        $inQuery = implode(',', array_fill(0, count($like_lang), '?'));
+        $dbLangs = $db->prepare("SELECT id, name FROM languages WHERE name IN ($inQuery)");
+        foreach ($like_lang as $key => $value) {
+          $dbLangs->bindValue(($key+1), $value);
+        }
+        $dbLangs->execute();
+        $languages = $dbLangs->fetchAll(PDO::FETCH_ASSOC);
+      }
+      catch(PDOException $e){
+        print('Error : ' . $e->getMessage());
+        exit();
+      }
+      
+      val_empty('like_lang', 'Неверно выбраны языки', $dbLangs->rowCount() != count($like_lang));
+    }
+    if(!val_empty('biography', 'Заполните поле', empty($biography))){
+      val_empty('biography', 'Длина текста > 65 535 символов', strlen($biography) > 65535);
+    }
+    val_empty('oznakomlen', "Ознакомьтесь с контрактом", empty($oznakomlen));
+    
+    if ($error) {
+      // При наличии ошибок перезагружаем страницу и завершаем работу скрипта.
+      header('Location: index.php');
       exit();
     }
-  }
-
-  $errors = '';
-  $fio = (isset($_POST['fio']) ? $_POST['fio'] : '');
-  $phone = (isset($_POST['phone']) ? $_POST['phone'] : '');
-  $email = (isset($_POST['email']) ? $_POST['email'] : '');
-  $birthday = (isset($_POST['birthday']) ? strtotime($_POST['birthday']) : '');
-  $gender = (isset($_POST['gender']) ? $_POST['gender'] : '');
-  $like_lang = (isset($_POST['like_lang']) ? $_POST['like_lang'] : '');
-  $biography = (isset($_POST['biography']) ? $_POST['biography'] : '');
-  $oznakomlen = (isset($_POST['oznakomlen']) ? $_POST['oznakomlen'] : '');
-
-  $phone = preg_replace('/\D/', '', $phone);
-  
-  $like_lang_s = ($like_lang != '') ? implode(", ", $like_lang) : [];
-  
-  val_empty($fio, "имя");
-  val_empty($phone, "телефон");
-  val_empty($email, "email");
-  val_empty($birthday, "дата");
-  val_empty($gender, "пол", 1);
-  val_empty($like_lang, "языки", 1);
-  val_empty($biography, "биографию");
-  val_empty($oznakomlen, "ознакомлен", 2);
-  if(empty($fio)){
-    print('пустое поле фио');
-  }
-
-  if(strlen($fio) > 255){
-    $errors = 'Длина поля "ФИО" > 255 символов';
-  }
-  elseif(count(explode(" ", $fio)) < 2){
-    $errors = 'Неверный формат ФИО';
-  } 
-  elseif(strlen($phone) != 11){
-    $errors = 'Неверное значение поля "Телефон"';
-  }
-  elseif(strlen($email) > 255){
-    $errors = 'Длина поля "email" > 255 символов';
-  }
-  elseif(!preg_match('/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/', $email)){
-    $errors = 'Неверное значение поля "email"';
-  }
-  elseif(!is_numeric($birthday) || strtotime("now") < $birthday){
-    $errors = 'Укажите корректно дату';
-  }
-  elseif($gender != "male" && $gender != "female"){
-    $errors = 'Укажите пол';
-  }
-  elseif(count($like_lang) == 0){
-    $errors = 'Укажите языки';
-  }
-
-  if ($errors != '') {
-    errp($errors);
-  }
-
-  $db = new PDO('mysql:host=localhost;dbname=u67404', 'u67404', '4971288',
-     [PDO::ATTR_PERSISTENT => true, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-  
-  $inQuery = implode(',', array_fill(0, count($like_lang), '?'));
-
-  //$db = new PDO('mysql:host=localhost;dbname=u67404', 'root', '');
-  //$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  
-  try {
-    $dbLangs = $db->prepare("SELECT id, name FROM languages WHERE name IN ($inQuery)");
-    foreach ($like_lang as $key => $value) {
-      $dbLangs->bindValue(($key+1), $value);
+    else {
+      // Удаляем Cookies с признаками ошибок.
+      del_cook('fio');
+      del_cook('phone');
+      del_cook('email');
+      del_cook('birthday');
+      del_cook('gender');
+      del_cook('like_lang');
+      del_cook('biography');
+      del_cook('oznakomlen');
     }
-    $dbLangs->execute();
-    $languages = $dbLangs->fetchAll(PDO::FETCH_ASSOC);
-  }
-  catch(PDOException $e){
-    print('Error : ' . $e->getMessage());
-    exit();
-  }
-
-  echo $dbLangs->rowCount().'**'.count($like_lang);
-  
-  if($dbLangs->rowCount() != count($like_lang)){
-    $errors = 'Неверно выбраны языки';
-  }
-  elseif(strlen($biography) > 65535){
-    $errors = 'Длина поля "Биография" > 65 535 символов';
-  }
-
-  if ($errors != '') {
-    errp($errors);
-  }
-
-  try {
-    $stmt = $db->prepare("INSERT INTO form_data (fio, phone, email, birthday, gender, biography) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$fio, $phone, $email, $birthday, $gender, $biography]);
-    $fid = $db->lastInsertId();
-    $stmt1 = $db->prepare("INSERT INTO form_data_lang (id_form, id_lang) VALUES (?, ?)");
-    foreach($languages as $row){
-        $stmt1->execute([$fid, $row['id']]);
+    
+    try {
+      $stmt = $db->prepare("INSERT INTO form_data (fio, phone, email, birthday, gender, biography) VALUES (?, ?, ?, ?, ?, ?)");
+      $stmt->execute([$fio, $phone, $email, $birthday, $gender, $biography]);
+      $fid = $db->lastInsertId();
+      $stmt1 = $db->prepare("INSERT INTO form_data_lang (id_form, id_lang) VALUES (?, ?)");
+      foreach($languages as $row){
+          $stmt1->execute([$fid, $row['id']]);
+      }
     }
-  }
-  catch(PDOException $e){
-    print('Error : ' . $e->getMessage());
-    exit();
-  }
+    catch(PDOException $e){
+      print('Error : ' . $e->getMessage());
+      exit();
+    }
+    setcookie('fio_value', $fio, time() + 24 * 60 * 60 * 365);
+    setcookie('phone_value', $phone, time() + 24 * 60 * 60 * 365);
+    setcookie('email_value', $email, time() + 24 * 60 * 60 * 365);
+    setcookie('birthday_value', $birthday, time() + 24 * 60 * 60 * 365);
+    setcookie('gender_value', $gender, time() + 24 * 60 * 60 * 365);
+    setcookie('like_value', $like, time() + 24 * 60 * 60 * 365);
+    setcookie('biography_value', $biography, time() + 24 * 60 * 60 * 365);
+    setcookie('oznakomlen_value', $oznakomlen, time() + 24 * 60 * 60 * 365);
 
-  //  stmt - это "дескриптор состояния".
+    // Сохраняем куку с признаком успешного сохранения.
+    setcookie('save', '1');
   
-  //  Именованные метки.
-  //$stmt = $db->prepare("INSERT INTO test (label,color) VALUES (:label,:color)");
-  //$stmt -> execute(['label'=>'perfect', 'color'=>'green']);
-  
-  //Еще вариант
-  /*$stmt = $db->prepare("INSERT INTO users (firstname, lastname, email) VALUES (:firstname, :lastname, :email)");
-  $stmt->bindParam(':firstname', $firstname);
-  $stmt->bindParam(':lastname', $lastname);
-  $stmt->bindParam(':email', $email);
-  $firstname = "John";
-  $lastname = "Smith";
-  $email = "john@test.com";
-  $stmt->execute();
-  */
-
-  // Делаем перенаправление.
-  // Если запись не сохраняется, но ошибок не видно, то можно закомментировать эту строку чтобы увидеть ошибку.
-  // Если ошибок при этом не видно, то необходимо настроить параметр display_errors для PHP.
-  header('Location: ?save=1');
+    // Делаем перенаправление.
+    header('Location: index.php');
+  }
+?>

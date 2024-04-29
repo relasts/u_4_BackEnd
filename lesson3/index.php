@@ -2,6 +2,13 @@
 <?php
   header('Content-Type: text/html; charset=UTF-8');
 
+  $db = '';
+
+  function conn(){
+    global $db;
+    include('connection.php');
+  }
+  
   if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (!empty($_GET['save'])) {
       // Если есть параметр save, то выводим сообщение пользователю.
@@ -86,14 +93,8 @@
     errp($errors);
   }
 
-  // $db = new PDO('mysql:host=localhost;dbname=u67404', 'u67404', '4971288',
-  //    [PDO::ATTR_PERSISTENT => true, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-  
-  $db = new PDO('mysql:host=localhost;dbname=u67404', 'root', '');
-  $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-  
+  conn();
   $inQuery = implode(',', array_fill(0, count($like_lang), '?'));
-
   try {
     $dbLangs = $db->prepare("SELECT id, name FROM languages WHERE name IN ($inQuery)");
     foreach ($like_lang as $key => $value) {
@@ -106,8 +107,6 @@
     print('Error : ' . $e->getMessage());
     exit();
   }
-
-  echo $dbLangs->rowCount().'**'.count($like_lang);
   
   if($dbLangs->rowCount() != count($like_lang)){
     $errors = 'Неверно выбраны языки';
