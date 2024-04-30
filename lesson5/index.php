@@ -1,6 +1,7 @@
 <?php
   header('Content-Type: text/html; charset=UTF-8');
-    
+  session_start();
+  
   function del_cook($cook){
     setcookie($cook.'_error', '', 100000);
   }
@@ -24,6 +25,7 @@
     $errors = array();
     $messages = array();
     $values = array();
+    $error = true;
     
     function setVal($enName, $param){
       global $values;
@@ -31,7 +33,9 @@
     }
 
     function val_empty($enName, $val){
-      global $errors, $messages;
+      global $errors, $messages, $error;
+      if($error) 
+        $error = empty($_COOKIE[$enName.'_error']);
 
       $errors[$enName] = !empty($_COOKIE[$enName.'_error']);
       $messages[$enName] = "<div class='messageError'>$val</div>";
@@ -42,15 +46,17 @@
 
     if (!empty($_COOKIE['save'])) {
       setcookie('save', '', 100000);
+      setcookie('login', '', 100000);
+      setcookie('password', '', 100000);
       $messages['success'] = 'Спасибо, результаты сохранены.';
-      if (!empty($_COOKIE['pass'])) {
+      if (!empty($_COOKIE['password'])) {
         $messages['info'] = sprintf('Вы можете <a href="login.php">войти</a> с логином <strong>%s</strong>
           и паролем <strong>%s</strong> для изменения данных.',
           strip_tags($_COOKIE['login']),
-          strip_tags($_COOKIE['pass']));
+          strip_tags($_COOKIE['password']));
       }
     }
-       
+    
     val_empty('fio', $fio);
     val_empty('phone', $phone);
     val_empty('email', $email);
@@ -64,21 +70,28 @@
 
     // Если нет предыдущих ошибок ввода, есть кука сессии, начали сессию и
     // ранее в сессию записан факт успешного логина.
-    if (empty($errors) && !empty($_COOKIE[session_name()]) &&
-        session_start() && !empty($_SESSION['login'])) {
+    if ($error && !empty($_SESSION['login'])) {
 
       conn();
       try {
         $dbFD = $db->prepare("SELECT * FROM form_data WHERE user_id = ?");
         $dbFD->execute([$_SESSION['user_id']]);
-        $fet = $dbFD->fetchAll(PDO::FETCH_ASSOC);
-
+        $fet = $dbFD->fetchAll(PDO::FETCH_ASSOC)[0];
+        $form_id = $fet['id'];
+        $dbL = $db->prepare("SELECT l.name FROM form_data_lang f
+                              LEFT JOIN languages l ON l.id = f.id_lang
+                              WHERE f.id_form = ?");
+        $dbL->execute([$form_id]);
+        $like_langsa = [];
+        foreach($dbL->fetchAll(PDO::FETCH_ASSOC) as $item){
+          $like_langsa[] = $item['name'];
+        }
         setVal('fio', $fet['fio']);
         setVal('phone', $fet['phone']);
         setVal('email', $fet['email']);
         setVal('birthday', $fet['birthday']);
         setVal('gender', $fet['gender']);
-        setVal('like_lang', $fet['like_lang']);
+        setVal('like_lang', $langs);
         setVal('biography', $fet['biography']);
         setVal('oznakomlen', $fet['oznakomlen']);
       }
@@ -86,9 +99,9 @@
         print('Error : ' . $e->getMessage());
         exit();
       }
-          
+      //  print_r($values);   
       // TODO: загрузить данные пользователя из БД и заполнить переменную $values, предварительно санитизовав.
-      printf('Вход с логином %s, uid %d', $_SESSION['login'], $_SESSION['uid']);
+      // printf('Вход с логином %s, uid %d', $_SESSION['login'], $_SESSION['user_id']);
     }
     
     include('form.php');
@@ -184,11 +197,7 @@
       del_cook('biography');
       del_cook('oznakomlen');
     }
-    
-
-
-
-
+  
     // Проверяем меняются ли ранее сохраненные данные или отправляются новые.
     if (!empty($_COOKIE[session_name()]) &&
         session_start() && !empty($_SESSION['login'])) {

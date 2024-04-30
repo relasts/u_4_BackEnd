@@ -13,6 +13,7 @@
     <form action="" method="post">
         <h3>Форма</h3>
         <div class="message"><?php if(isset($messages['success'])) echo $messages['success']; ?></div>
+        <div class="message message_info"><?php if(isset($messages['info'])) echo $messages['info']; ?></div>
         <div>
             <input class="w100 <?php echo ($errors['fio'] != NULL) ? 'borred' : ''; ?>" value="<?php echo $values['fio']; ?>" type="text" name="fio" placeholder="ФИО">
             <div class="errpodinp"><?php echo $messages['fio']?></div>
