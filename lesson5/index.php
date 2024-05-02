@@ -92,7 +92,7 @@
         setVal('fio', $fet['fio']);
         setVal('phone', $fet['phone']);
         setVal('email', $fet['email']);
-        setVal('birthday', $fet['birthday']);
+        setVal('birthday', date("Y-m-d", $fet['birthday']));
         setVal('gender', $fet['gender']);
         setVal('like_lang', $like_lang);
         setVal('biography', $fet['biography']);
