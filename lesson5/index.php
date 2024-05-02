@@ -35,13 +35,13 @@
     }
 
     function val_empty($enName, $val){
-      global $errors, $messages, $error;
+      global $errors, $messages, $error, $values;
       if($error) 
         $error = empty($_COOKIE[$enName.'_error']);
 
       $errors[$enName] = !empty($_COOKIE[$enName.'_error']);
       $messages[$enName] = "<div class='messageError'>$val</div>";
-      setVal($enName, $_COOKIE[$enName.'_value']);
+      $values[$enName] = empty($_COOKIE[$enName.'_value']) ? '' : strip_tags($_COOKIE[$enName.'_value']);
       del_cook($enName);
       return;
     }
