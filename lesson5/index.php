@@ -114,7 +114,7 @@
     $fio = (!empty($_POST['fio']) ? $_POST['fio'] : '');
     $phone = (!empty($_POST['phone']) ? $_POST['phone'] : '');
     $email = (!empty($_POST['email']) ? $_POST['email'] : '');
-    $birthday = (!empty($_POST['birthday']) ? strtotime($_POST['birthday']) : '');
+    $birthday = (!empty($_POST['birthday']) ? $_POST['birthday'] : '');
     $gender = (!empty($_POST['gender']) ? $_POST['gender'] : '');
     $like_lang = (!empty($_POST['like_lang']) ? $_POST['like_lang'] : '');
     $biography = (!empty($_POST['biography']) ? $_POST['biography'] : '');
@@ -171,7 +171,7 @@
       }
     }
     if(!val_empty('birthday', "Выберите дату рождения", empty($birthday))){
-      val_empty('birthday', "Неверно введена дата рождения, дата больше настоящей", (strtotime("now") < $birthday));
+      val_empty('birthday', "Неверно введена дата рождения, дата больше настоящей", (strtotime("now") < strtotime($birthday)));
     }
     val_empty('gender', "Выберите пол", (empty($gender) || !preg_match('/^(male|female)$/', $gender)));
     if(!val_empty('like_lang', "Выберите хотя бы один язык", empty($like_lang))){
@@ -218,7 +218,7 @@
     if ($log) {
       
       $stmt = $db->prepare("UPDATE form_data SET fio = ?, phone = ?, email = ?, birthday = ?, gender = ?, biography = ? WHERE user_id = ?");
-      $stmt->execute([$fio, $phone, $email, $birthday, $gender, $biography, $_SESSION['user_id']]);
+      $stmt->execute([$fio, $phone, $email, strtotime($birthday), $gender, $biography, $_SESSION['user_id']]);
 
       $stmt = $db->prepare("DELETE FROM form_data_lang WHERE id_form = ?");
       $stmt->execute([$_SESSION['form_id']]);
@@ -248,7 +248,7 @@
         $user_id = $db->lastInsertId();
 
         $stmt = $db->prepare("INSERT INTO form_data (user_id, fio, phone, email, birthday, gender, biography) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$user_id, $fio, $phone, $email, $birthday, $gender, $biography]);
+        $stmt->execute([$user_id, $fio, $phone, $email, strtotime($birthday), $gender, $biography]);
         $fid = $db->lastInsertId();
 
         $stmt1 = $db->prepare("INSERT INTO form_data_lang (id_form, id_lang) VALUES (?, ?)");
