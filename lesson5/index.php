@@ -94,7 +94,7 @@
         setVal('email', $fet['email']);
         setVal('birthday', $fet['birthday']);
         setVal('gender', $fet['gender']);
-        setVal('like_lang', $langs);
+        setVal('like_lang', $like_lang);
         setVal('biography', $fet['biography']);
         setVal('oznakomlen', $fet['oznakomlen']);
       }
