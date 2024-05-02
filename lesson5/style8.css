@@ -15,6 +15,7 @@ form{
     background-color: #fcfcfc;
     padding: 10px;
     margin: auto;
+    position: relative;
 }
 form h3{
     text-align: center;
@@ -53,7 +54,9 @@ form textarea{
     resize: vertical;
     font-size: 16px;
 }
-form button{
+form button,
+.logout_form,
+.login_form{
     width: 100px;
     height: 30px;
     background: rgb(60, 255, 190);
@@ -65,6 +68,20 @@ form button{
 }
 form button:active{
     filter: brightness(120%);
+}
+.logout_form,
+.login_form{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: unset;
+    background: brown !important;
+    padding: 3px 8px;
+    height: unset;
+    color: #fff !important;
+}
+.login_form{
+    background: rgb(56, 56, 231) !important;
 }
 .message{
     font-size: 21px;
@@ -96,4 +113,8 @@ form button:active{
 
 .pformAuth > form > div{
     margin: 20px 0;
+}
+
+.editBut{
+    background: orange !important;
 }

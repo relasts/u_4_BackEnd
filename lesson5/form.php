@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="libs/bootstrap-4.0.0-dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="style8.css">
-    <script src="libs/jquery-3.4.1.min.js"></script>
     <title>Задание 5</title>
 </head>
 <body>
 <div class="pform">
     <form action="" method="post">
         <h3>Форма</h3>
+        <?php 
+            if($log) echo '<button type="submit" class="logout_form" name="logout_form">Выйти</button>'; 
+            else echo '<a href="login.php" class="login_form" name="logout_form">Войти</a>';
+        ?>
         <div class="message"><?php if(isset($messages['success'])) echo $messages['success']; ?></div>
         <div class="message message_info"><?php if(isset($messages['info'])) echo $messages['info']; ?></div>
         <div>
@@ -27,7 +30,7 @@
             <div class="errpodinp"><?php echo $messages['email']?></div>
         </div>
         <div>
-            <input class="w100 <?php echo ($errors['birthday'] != NULL) ? 'borred' : ''; ?>" value="<?php echo date("Y-m-d", $values['birthday']); ?>" type="date" name="birthday">
+            <input class="w100 <?php echo ($errors['birthday'] != NULL) ? 'borred' : ''; ?>" value="<?php if($values['birthday'] > 100000) echo date("Y-m-d", $values['birthday']); ?>" type="date" name="birthday">
             <div class="errpodinp"><?php echo $messages['birthday']?></div>
         </div>
         <div class="ent">
@@ -69,7 +72,10 @@
             <label for="oznakomlen" class="<?php echo ($errors['oznakomlen'] != NULL) ? 'colred' : ''; ?>">С контрактом ознакомлен (а)</label>
             <div class="errpodinp"><?php echo $messages['oznakomlen']?></div>
         </div>
-        <button type="submit">Отправить</button>
+        <?php
+            if($log) echo '<button type="submit" class="editBut">Изменить</button>';
+            else echo '<button type="submit">Отправить</button>';
+        ?>
     </form>
   </div>
 </body>

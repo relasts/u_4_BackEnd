@@ -1,9 +1,11 @@
 <?php
   header('Content-Type: text/html; charset=UTF-8');
   session_start();
+  $log = !empty($_SESSION['login']);
   
-  function del_cook($cook){
+  function del_cook($cook, $vals = 0){
     setcookie($cook.'_error', '', 100000);
+    if($vals) setcookie($cook.'_value', '', 100000);
   }
 
   $db;
@@ -16,7 +18,7 @@
     $fio = (!empty($_COOKIE['fio_error']) ? $_COOKIE['fio_error'] : '');
     $phone = (!empty($_COOKIE['phone_error']) ? $_COOKIE['phone_error'] : '');
     $email = (!empty($_COOKIE['email_error']) ? $_COOKIE['email_error'] : '');
-    $birthday = (!empty($_COOKIE['birthday_error']) ? strtotime($_COOKIE['birthday_error']) : '');
+    $birthday = (!empty($_COOKIE['birthday_error']) ? $_COOKIE['birthday_error'] : '');
     $gender = (!empty($_COOKIE['gender_error']) ? $_COOKIE['gender_error'] : '');
     $like_lang = (!empty($_COOKIE['like_lang_error']) ? $_COOKIE['like_lang_error'] : '');
     $biography = (!empty($_COOKIE['biography_error']) ? $_COOKIE['biography_error'] : '');
@@ -78,6 +80,7 @@
         $dbFD->execute([$_SESSION['user_id']]);
         $fet = $dbFD->fetchAll(PDO::FETCH_ASSOC)[0];
         $form_id = $fet['id'];
+        $_SESSION['form_id'] = $form_id;
         $dbL = $db->prepare("SELECT l.name FROM form_data_lang f
                               LEFT JOIN languages l ON l.id = f.id_lang
                               WHERE f.id_form = ?");
@@ -116,7 +119,20 @@
     $like_lang = (!empty($_POST['like_lang']) ? $_POST['like_lang'] : '');
     $biography = (!empty($_POST['biography']) ? $_POST['biography'] : '');
     $oznakomlen = (!empty($_POST['oznakomlen']) ? $_POST['oznakomlen'] : '');
-    $error = false;
+
+    if(isset($_POST['logout_form'])){
+      del_cook('fio', 1);
+      del_cook('phone', 1);
+      del_cook('email', 1);
+      del_cook('birthday', 1);
+      del_cook('gender', 1);
+      del_cook('like_lang', 1);
+      del_cook('biography', 1);
+      del_cook('oznakomlen', 1);
+      session_destroy();
+      header('Location: ./');
+      exit();
+    }
 
     $phone1 = preg_replace('/\D/', '', $phone);
 
@@ -199,8 +215,18 @@
     }
   
     // Проверяем меняются ли ранее сохраненные данные или отправляются новые.
-    if (!empty($_COOKIE[session_name()]) &&
-        session_start() && !empty($_SESSION['login'])) {
+    if ($log) {
+      
+      $stmt = $db->prepare("UPDATE form_data SET fio = ?, phone = ?, email = ?, birthday = ?, gender = ?, biography = ? WHERE user_id = ?");
+      $stmt->execute([$fio, $phone, $email, $birthday, $gender, $biography, $_SESSION['user_id']]);
+
+      $stmt = $db->prepare("DELETE FROM form_data_lang WHERE id_form = ?");
+      $stmt->execute([$_SESSION['form_id']]);
+
+      $stmt1 = $db->prepare("INSERT INTO form_data_lang (id_form, id_lang) VALUES (?, ?)");
+      foreach($languages as $row){
+          $stmt1->execute([$_SESSION['form_id'], $row['id']]);
+      }
       // TODO: перезаписать данные в БД новыми данными,
       // кроме логина и пароля.
     }
