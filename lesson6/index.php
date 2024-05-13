@@ -1,6 +1,10 @@
 <?php
   header('Content-Type: text/html; charset=UTF-8');
   session_start();
+  if(strpos($_SERVER['REQUEST_URI'], 'index.php') === false){
+    header('Location: index.php');
+    exit();
+  }
 
   $log = !empty($_SESSION['login']);
   $adminLog = !empty($_SERVER['PHP_AUTH_USER']);
