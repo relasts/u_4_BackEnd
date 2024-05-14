@@ -62,7 +62,7 @@
                   <td>'.$row['fio'].'</td>
                   <td>'.$row['phone'].'</td>
                   <td>'.$row['email'].'</td>
-                  <td>'.$row['birthday'].'</td>
+                  <td>'.date("d.m.Y", $row['birthday']).'</td>
                   <td>'.(($row['gender'] == "male") ? "Мужской" : "Женский").'</td>
                   <td class="wb">'.$row['biography'].'</td>
                   <td>';
