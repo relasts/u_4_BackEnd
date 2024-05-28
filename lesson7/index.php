@@ -158,14 +158,14 @@
   }
   else {
     $csrf_tokens = (isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '');
-    $fio = (isset($_POST['fio']) ? checkInput($_POST['fio']) : '');
-    $phone = (isset($_POST['phone']) ? checkInput($_POST['phone']) : '');
-    $email = (isset($_POST['email']) ? checkInput($_POST['email']) : '');
-    $birthday = (isset($_POST['birthday']) ? checkInput($_POST['birthday']) : '');
-    $gender = (isset($_POST['gender']) ? checkInput($_POST['gender']) : '');
+    $fio = (isset($_POST['fio']) ? $_POST['fio'] : '');
+    $phone = (isset($_POST['phone']) ? $_POST['phone'] : '');
+    $email = (isset($_POST['email']) ? $_POST['email'] : '');
+    $birthday = (isset($_POST['birthday']) ? $_POST['birthday'] : '');
+    $gender = (isset($_POST['gender']) ? $_POST['gender'] : '');
     $like_lang = (isset($_POST['like_lang']) ? $_POST['like_lang'] : '');
-    $biography = (isset($_POST['biography']) ? checkInput($_POST['biography']) : '');
-    $oznakomlen = (isset($_POST['oznakomlen']) ? checkInput($_POST['oznakomlen']) : '');
+    $biography = (isset($_POST['biography']) ? $_POST['biography'] : '');
+    $oznakomlen = (isset($_POST['oznakomlen']) ? $_POST['oznakomlen'] : '');
 
     if($_SESSION['csrf_token'] != $csrf_tokens){
       set_cook('csrf_error', '1');
@@ -228,7 +228,7 @@
         $inQuery = implode(',', array_fill(0, count($like_lang), '?'));
         $dbLangs = $db->prepare("SELECT id, name FROM languages WHERE name IN ($inQuery)");
         foreach ($like_lang as $key => $value) {
-          $dbLangs->bindValue(($key+1), checkInput($value));
+          $dbLangs->bindValue(($key+1), $value);
         }
         $dbLangs->execute();
         $languages = $dbLangs->fetchAll(PDO::FETCH_ASSOC);

@@ -34,7 +34,7 @@
     <link rel="stylesheet" href="libs/bootstrap-4.0.0-dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="./styleAdmin.css">
     <script src="./libs/js/jquery-3.4.1.min.js"></script>
-    <title>Задание 6 (админка)</title>
+    <title>Задание 7 (админка)</title>
 </head>
 <body class="admin">
 
@@ -70,14 +70,14 @@
       <?php
         $dbFD = $db->query("SELECT * FROM form_data ORDER BY id DESC");
         while($row = $dbFD->fetch(PDO::FETCH_ASSOC)){
-          echo '<tr data-id='.$row['id'].'>
-                  <td>'.$row['id'].'</td>
-                  <td>'.$row['fio'].'</td>
-                  <td>'.$row['phone'].'</td>
-                  <td>'.$row['email'].'</td>
-                  <td>'.date("d.m.Y", $row['birthday']).'</td>
-                  <td>'.(($row['gender'] == "male") ? "Мужской" : "Женский").'</td>
-                  <td class="wb">'.$row['biography'].'</td>
+          echo '<tr data-id='.checkInput($row['id']).'>
+                  <td>'.checkInput($row['id']).'</td>
+                  <td>'.checkInput($row['fio']).'</td>
+                  <td>'.checkInput($row['phone']).'</td>
+                  <td>'.checkInput($row['email']).'</td>
+                  <td>'.date("d.m.Y", checkInput($row['birthday'])).'</td>
+                  <td>'.((checkInput($row['gender']) == "male") ? "Мужской" : "Женский").'</td>
+                  <td class="wb">'.checkInput($row['biography']).'</td>
                   <td>';
           $dbl = $db->prepare("SELECT * FROM form_data_lang fd
                                 LEFT JOIN languages l ON l.id = fd.id_lang
