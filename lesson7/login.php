@@ -1,28 +1,10 @@
 <?php
-
-  /**
-   * Файл login.php для не авторизованного пользователя выводит форму логина.
-   * При отправке формы проверяет логин/пароль и создает сессию,
-   * записывает в нее логин и id пользователя.
-   * После авторизации пользователь перенаправляется на главную страницу
-   * для изменения ранее введенных данных.
-   **/
-
-  // Отправляем браузеру правильную кодировку,
-  // файл login.php должен быть в кодировке UTF-8 без BOM. 
   header('Content-Type: text/html; charset=UTF-8');
   session_start();
-  // В суперглобальном массиве $_SESSION хранятся переменные сессии.
-  // Будем сохранять туда логин после успешной авторизации.
   if (isset($_SESSION['login'])) {
-    // Если есть логин в сессии, то пользователь уже авторизован.
-    // TODO: Сделать выход (окончание сессии вызовом session_destroy()
-    //при нажатии на кнопку Выход).
-    // Делаем перенаправление на форму.
     header('Location: ./');
     exit();
   }
-
 
   $error = '';
 
@@ -30,35 +12,35 @@
 
   }
   else{
-    // TODO: Проверть есть ли такой логин и пароль в базе данных.
-    // Выдать сообщение об ошибках.
     require('connection.php');
-    $login = checkInput($_POST['login']);
-    $password = md5(checkInput($_POST['password']));
-    try {
-      $stmt = $db->prepare("SELECT id FROM users WHERE login = ? and password = ?");
-      $stmt->execute([$login, $password]);
-      $its = $stmt->rowCount();
-      if($its){
-        $uid = $stmt->fetchAll(PDO::FETCH_ASSOC)[0]['id'];
-        $_SESSION['login'] = $_POST['login'];
-        $_SESSION['user_id'] = $uid;
-        // Делаем перенаправление.
-        header('Location: ./');
-      }
-      else{
-        $error = 'Неверный логин или пароль';
-      }
-    }
-    catch(PDOException $e){
-      print('Error : ' . $e->getMessage());
-      exit();
-    }
-  }
+    $csrf_tokens = (isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '');
 
-  // В суперглобальном массиве $_SERVER PHP сохраняет некторые заголовки запроса HTTP
-  // и другие сведения о клиненте и сервере, например метод текущего запроса $_SERVER['REQUEST_METHOD'].
- 
+    if(isset($_POST['auth']) && $_SESSION['csrf_token_login'] != $csrf_tokens){
+      $error = 'Не соответствие CSRF токена';
+    }
+    else{
+      $login = checkInput($_POST['login']);
+      $password = md5(checkInput($_POST['password']));
+      try {
+        $stmt = $db->prepare("SELECT id FROM users WHERE login = ? and password = ?");
+        $stmt->execute([$login, $password]);
+        $its = $stmt->rowCount();
+        if($its){
+          $uid = $stmt->fetchAll(PDO::FETCH_ASSOC)[0]['id'];
+          $_SESSION['login'] = $_POST['login'];
+          $_SESSION['user_id'] = $uid;
+          header('Location: ./');
+        }
+        else{
+          $error = 'Неверный логин или пароль';
+        }
+      }
+      catch(PDOException $e){
+        print('Error : ' . $e->getMessage());
+        exit();
+      }
+    }
+  } 
 ?>
 
 <!DOCTYPE html>
@@ -74,6 +56,12 @@
 <body>
   <div class="pform pformAuth">
     <form action="" method="post">
+      <?php
+          $csrf_token = bin2hex(random_bytes(32));
+          $_SESSION['csrf_token_login'] = $csrf_token;
+      ?>
+      <input type="hidden" name='csrf_token' value='<?php echo $csrf_token; ?>'>
+      
       <div class="message" style="color: red;"><?php echo $error; ?></div>
       <h3>Авторизация</h3>
         <div>
@@ -82,7 +70,7 @@
         <div>
           <input class="w100" type="text" name="password" placeholder="Пароль">
         </div>
-        <button type="submit">Войти</button>
+        <button type="submit" name="auth">Войти</button>
     </form>
   </div>
 </body>

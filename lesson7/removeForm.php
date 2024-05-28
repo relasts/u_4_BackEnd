@@ -8,16 +8,24 @@
     if($_SERVER['PHP_AUTH_USER'] == NULL) res('error', "Вы не авторизованы");
 
     $id = checkInput($_POST['id']);
+    $csrf_token = checkInput($_POST['csrf_token']);
+    $csrf_token_admin = $_SESSION['csrf_token_admin'];
     if(!preg_match('/^[0-9]+$/', $id)) res('error', "Введите id");
+    if($csrf_token != $csrf_token_admin) res('error', "Не соответствие CSRF токена");
 
     
     $dbf = $db->prepare("SELECT * FROM form_data WHERE id = ?");
     $dbf->execute([$id]);
+    $data = $dbf->fetch(PDO::FETCH_ASSOC);
     if($dbf->rowCount() != 0){
         $dbdel = $db->prepare("DELETE FROM form_data WHERE id = ?");
-        $dbdel->execute([$id]);
+        $f1 = $dbdel->execute([$id]);
         $dbdel = $db->prepare("DELETE FROM form_data_lang WHERE id_form = ?");
-        ($dbdel->execute([$id])) ? res('success', "Форма удалена") : res('error', "Ошибка удаления");
+        $f2 = $dbdel->execute([$id]);
+        $dbdel = $db->prepare("DELETE FROM users WHERE id = ?");
+        $f3 = $dbdel->execute([$data['user_id']]);
+        
+        ($f1 && $f2 && $f3) ? res('success', "Форма удалена") : res('error', "Ошибка удаления");
     }
     else{
         res('error', "Форма не найдена");

@@ -48,6 +48,14 @@
     <div><a href="#analize">Статистика</a></div>
 </header>
 
+  <div>
+    <?php
+        $csrf_token = bin2hex(random_bytes(32));
+        $_SESSION['csrf_token_admin'] = $csrf_token;
+    ?>
+    <input type="hidden" name='csrf_token' id='csrf_token' value='<?php echo $csrf_token; ?>'>
+  </div>
+
   <table id="data">
     <thead>
       <tr>
