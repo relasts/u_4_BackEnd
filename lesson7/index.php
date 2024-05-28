@@ -1,6 +1,5 @@
 <?php
   header('Content-Type: text/html; charset=UTF-8');
-  session_start();
   if(strpos($_SERVER['REQUEST_URI'], 'index.php') === false){
     header('Location: index.php');
     exit();
@@ -22,21 +21,36 @@
   
   function del_cook($cook, $vals = 0){
     setcookie($cook.'_error', '', 100000);
-    if($vals) setcookie($cook.'_value', '', 100000);
+    if($vals == 1) setcookie($cook.'_value', '', 100000);
+    if($vals == 2) setcookie($cook, '', 100000);
+  }
+  function del_cook_all($p = 0){
+    del_cook('fio', $p);
+    del_cook('phone', $p);
+    del_cook('email', $p);
+    del_cook('birthday', $p);
+    del_cook('gender', $p);
+    del_cook('like_lang', $p);
+    del_cook('biography', $p);
+    del_cook('oznakomlen', $p);
+  }
+
+  function set_cook($cook, $val, $dop_time = 1){
+    setcookie($cook, $val, time() + 24 * 60 * 60 * $dop_time);
+  }
+
+  function user_exit(){
+    del_cook_all(1);
+    session_destroy();
+    header('Location: index.php');
+    exit();
   }
 
   if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if(($adminLog && isset($getUid)) || !$adminLog){
       $cookAdmin = (isset($_COOKIE['admin_value']) ? $_COOKIE['admin_value'] : '');
       if($cookAdmin == '1'){
-        del_cook('fio', 1);
-        del_cook('phone', 1);
-        del_cook('email', 1);
-        del_cook('birthday', 1);
-        del_cook('gender', 1);
-        del_cook('like_lang', 1);
-        del_cook('biography', 1);
-        del_cook('oznakomlen', 1);
+        del_cook_all(1);
         del_cook('admin', 1);
       }
     }
@@ -75,13 +89,13 @@
 
     if (isset($_COOKIE['csrf_error'])) {
       $messages['error'] = 'Не соответствие CSRF токена';
-      setcookie('csrf_error', '', 100000);
+      del_cook('csrf');
     }
     if (isset($_COOKIE['save'])) {
-      setcookie('save', '', 100000);
-      setcookie('login', '', 100000);
-      setcookie('password', '', 100000);
-      $messages['success'] = 'Спасибо, результаты сохранены.';
+      del_cook('save', 2);
+      del_cook('login', 2);
+      del_cook('password', 2);
+      $messages['success'] = (!$log) ? 'Спасибо, данные сохранены' : 'Данные изменены';
       if (isset($_COOKIE['password'])) {
         $messages['info'] = sprintf('Вы можете <a href="login.php">войти</a> с логином <strong>%s</strong>
           и паролем <strong>%s</strong> для изменения данных.',
@@ -100,46 +114,48 @@
     val_empty('oznakomlen', $oznakomlen);
     
     $like_langsa = explode(',', $values['like_lang']);
-
-    // Если нет предыдущих ошибок ввода, есть кука сессии, начали сессию и
-    // ранее в сессию записан факт успешного логина.
     
     if ($error && $log) {
       try {
         $dbFD = $db->prepare("SELECT * FROM form_data WHERE user_id = ?");
         $dbFD->execute([$uid]);
-        $fet = $dbFD->fetchAll(PDO::FETCH_ASSOC)[0];
-        $form_id = $fet['id'];
-        $_SESSION['form_id'] = $form_id;
-        $dbL = $db->prepare("SELECT l.name FROM form_data_lang f
-                              LEFT JOIN languages l ON l.id = f.id_lang
-                              WHERE f.id_form = ?");
-        $dbL->execute([$form_id]);
-        $like_langsa = [];
-        foreach($dbL->fetchAll(PDO::FETCH_ASSOC) as $item){
-          $like_langsa[] = $item['name'];
+        if($dbFD->rowCount() > 0){
+          $fet = $dbFD->fetchAll(PDO::FETCH_ASSOC)[0];
+          $form_id = $fet['id'];
+          $_SESSION['form_id'] = $form_id;
+          $dbL = $db->prepare("SELECT l.name FROM form_data_lang f
+                                LEFT JOIN languages l ON l.id = f.id_lang
+                                WHERE f.id_form = ?");
+          $dbL->execute([$form_id]);
+          $like_langsa = [];
+          foreach($dbL->fetchAll(PDO::FETCH_ASSOC) as $item){
+            $like_langsa[] = $item['name'];
+          }
+          setVal('fio', $fet['fio']);
+          setVal('phone', $fet['phone']);
+          setVal('email', $fet['email']);
+          setVal('birthday', date("Y-m-d", $fet['birthday']));
+          setVal('gender', $fet['gender']);
+          setVal('like_lang', $like_lang);
+          setVal('biography', $fet['biography']);
+          setVal('oznakomlen', $fet['oznakomlen']);
         }
-        setVal('fio', $fet['fio']);
-        setVal('phone', $fet['phone']);
-        setVal('email', $fet['email']);
-        setVal('birthday', date("Y-m-d", $fet['birthday']));
-        setVal('gender', $fet['gender']);
-        setVal('like_lang', $like_lang);
-        setVal('biography', $fet['biography']);
-        setVal('oznakomlen', $fet['oznakomlen']);
+        else{
+          unset($_SESSION['user_id']);
+          $log = false;
+          unset($uid);
+          $messages['error'] = 'Пользователь был удален';
+          user_exit();
+        }
       }
       catch(PDOException $e){
         print('Error : ' . $e->getMessage());
         exit();
       }
-      //  print_r($values);   
-      // TODO: загрузить данные пользователя из БД и заполнить переменную $values, предварительно санитизовав.
-      // printf('Вход с логином %s, uid %d', $_SESSION['login'], $uid);
     }
     
     include('form.php');
   }
-  // Иначе, если запрос был методом POST, т.е. нужно проверить данные и сохранить их в XML-файл.
   else {
     $csrf_tokens = (isset($_POST['csrf_token']) ? $_POST['csrf_token'] : '');
     $fio = (isset($_POST['fio']) ? checkInput($_POST['fio']) : '');
@@ -152,7 +168,7 @@
     $oznakomlen = (isset($_POST['oznakomlen']) ? checkInput($_POST['oznakomlen']) : '');
 
     if($_SESSION['csrf_token'] != $csrf_tokens){
-      setcookie('csrf_error', '1', time() + 24 * 60 * 60); //сохраняем на сутки
+      set_cook('csrf_error', '1');
       header('Location: index.php'.(($getUid != NULL) ? '?uid='.$uid : ''));
       exit();
     }
@@ -162,16 +178,7 @@
         header('Location: admin.php');
       }
       else{
-        del_cook('fio', 1);
-        del_cook('phone', 1);
-        del_cook('email', 1);
-        del_cook('birthday', 1);
-        del_cook('gender', 1);
-        del_cook('like_lang', 1);
-        del_cook('biography', 1);
-        del_cook('oznakomlen', 1);
-        session_destroy();
-        header('Location: index.php'.(($getUid != NULL) ? '?uid='.$uid : ''));
+        user_exit();
       }
       exit();
     }
@@ -183,7 +190,7 @@
       $res = false;
       $setVal = $_POST[$cook];
       if ($usl) {
-        setcookie($cook.'_error', $comment, time() + 24 * 60 * 60); //сохраняем на сутки
+        set_cook($cook.'_error', $comment);
         $error = true;
         $res = true;
       }
@@ -193,7 +200,7 @@
         $setVal = ($like_lang != '') ? implode(",", $like_lang) : '';
       }
       
-      setcookie($cook.'_value', $setVal, time() + 30 * 24 * 60 * 60); //сохраняем на месяц
+      set_cook($cook.'_value', $setVal, 60);
       return $res;
     }
     
@@ -239,23 +246,13 @@
     val_empty('oznakomlen', "Ознакомьтесь с контрактом", empty($oznakomlen));
     
     if ($error) {
-      // При наличии ошибок перезагружаем страницу и завершаем работу скрипта.
       header('Location: index.php'.(($getUid != NULL) ? '?uid='.$uid : ''));
       exit();
     }
     else {
-      // Удаляем Cookies с признаками ошибок.
-      del_cook('fio');
-      del_cook('phone');
-      del_cook('email');
-      del_cook('birthday');
-      del_cook('gender');
-      del_cook('like_lang');
-      del_cook('biography');
-      del_cook('oznakomlen');
+      del_cook_all();
     }
     
-    // Проверяем меняются ли ранее сохраненные данные или отправляются новые.
     if ($log) {
       $stmt = $db->prepare("UPDATE form_data SET fio = ?, phone = ?, email = ?, birthday = ?, gender = ?, biography = ? WHERE user_id = ?");
       $stmt->execute([$fio, $phone, $email, strtotime($birthday), $gender, $biography, $uid]);
@@ -268,21 +265,13 @@
           $stmt1->execute([$_SESSION['form_id'], $row['id']]);
       }
       if($adminLog) 
-        setcookie('admin_value', '1', time() + 30 * 24 * 60 * 60);
-      // TODO: перезаписать данные в БД новыми данными,
-      // кроме логина и пароля.
+        set_cook('admin_value', '1', 60);
     }
     else {
-      // Генерируем уникальный логин и пароль.
-      // TODO: сделать механизм генерации, например функциями rand(), uniquid(), md5(), substr().
       $login = substr(uniqid(), 0, 4).rand(10, 100);
       $password = rand(100, 1000).substr(uniqid(), 4, 10);
-      // Сохраняем в Cookies.
       setcookie('login', $login);
       setcookie('password', $password);
-
-      // TODO: Сохранение данных формы, логина и хеш md5() пароля в базу данных.
-      // ...
       $mpassword = md5($password);
       try {
         $stmt = $db->prepare("INSERT INTO users (login, password) VALUES (?, ?)");
@@ -302,20 +291,16 @@
         print('Error : ' . $e->getMessage());
         exit();
       }
-      setcookie('fio_value', $fio, time() + 24 * 60 * 60 * 365);
-      setcookie('phone_value', $phone, time() + 24 * 60 * 60 * 365);
-      setcookie('email_value', $email, time() + 24 * 60 * 60 * 365);
-      setcookie('birthday_value', $birthday, time() + 24 * 60 * 60 * 365);
-      setcookie('gender_value', $gender, time() + 24 * 60 * 60 * 365);
-      setcookie('like_value', $like, time() + 24 * 60 * 60 * 365);
-      setcookie('biography_value', $biography, time() + 24 * 60 * 60 * 365);
-      setcookie('oznakomlen_value', $oznakomlen, time() + 24 * 60 * 60 * 365);
+      set_cook('fio_value', $fio, 365);
+      set_cook('phone_value', $phone, 365);
+      set_cook('email_value', $email, 365);
+      set_cook('birthday_value', $birthday, 365);
+      set_cook('gender_value', $gender, 365);
+      set_cook('like_value', $like, 365);
+      set_cook('biography_value', $biography, 365);
+      set_cook('oznakomlen_value', $oznakomlen, 365);
     }
-
-    // Сохраняем куку с признаком успешного сохранения.
     setcookie('save', '1');
-
-    // Делаем перенаправление.
     header('Location: index.php'.(($getUid != NULL) ? '?uid='.$uid : ''));
   }
 ?>
