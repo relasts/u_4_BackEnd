@@ -5,6 +5,9 @@
         exit(json_encode(array('status' => $status, 'value' => $val), JSON_UNESCAPED_UNICODE));
     }
 
+    $login = $_SERVER['PHP_AUTH_USER'];
+    $password = md5($_SERVER['PHP_AUTH_PW']);
+
     if($_SERVER['PHP_AUTH_USER'] == NULL) res('error', "Вы не авторизованы");
 
     $id = checkInput($_POST['id']);
@@ -12,6 +15,12 @@
     $csrf_token_admin = $_SESSION['csrf_token_admin'];
     if(!preg_match('/^[0-9]+$/', $id)) res('error', "Введите id");
     if($csrf_token != $csrf_token_admin) res('error', "Не соответствие CSRF токена");
+
+    $stmt = $db->prepare("SELECT id FROM users WHERE login = ? and password = ?");
+    $stmt->execute([$login, $password]);
+    $its = $stmt->rowCount();
+
+    if(!$its) res('error', "Неверный логин или пароль");
 
     
     $dbf = $db->prepare("SELECT * FROM form_data WHERE id = ?");
