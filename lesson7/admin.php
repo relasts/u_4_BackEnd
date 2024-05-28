@@ -10,12 +10,7 @@
   // PHP хранит логин и пароль в суперглобальном массиве $_SERVER.
   // Подробнее см. стр. 26 и 99 в учебном пособии Веб-программирование и веб-сервисы.
 
-  $haveAdmin = 0;
-  if(isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])){
-    $qu = $db->prepare("SELECT id FROM users WHERE role = 'admin' and login = ? and password = ?");
-    $qu->execute([$_SERVER['PHP_AUTH_USER'], md5($_SERVER['PHP_AUTH_PW'])]);
-    $haveAdmin = $qu->rowCount();
-  }
+  $haveAdmin = checkAdmin($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 
   if (!$haveAdmin) {
     header('HTTP/1.1 401 Unanthorized');

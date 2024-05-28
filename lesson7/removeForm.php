@@ -8,7 +8,7 @@
     $login = $_SERVER['PHP_AUTH_USER'];
     $password = md5($_SERVER['PHP_AUTH_PW']);
 
-    if($_SERVER['PHP_AUTH_USER'] == NULL) res('error', "Вы не авторизованы");
+    if(!checkAdmin($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'])) res('error', "Вы не авторизованы");
 
     $id = checkInput($_POST['id']);
     $csrf_token = checkInput($_POST['csrf_token']);

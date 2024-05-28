@@ -4,8 +4,8 @@
     function res($status, $val){
         exit(json_encode(array('status' => $status, 'value' => $val), JSON_UNESCAPED_UNICODE));
     }
-
-    if($_SERVER['PHP_AUTH_USER'] == NULL) res('error', "Вы не авторизованы");
+    
+    if(!checkAdmin($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'])) res('error', "Вы не авторизованы");
 
     $id = $_POST['id'];
     if(!preg_match('/^[0-9]+$/', $id)) res('error', "Введите id");
