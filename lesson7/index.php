@@ -8,7 +8,7 @@
   include('connection.php');
 
   $log = isset($_SESSION['login']);
-  $adminLog = isset($_SERVER['PHP_AUTH_USER']);
+  $adminLog = checkAdmin($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
   $uid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
   $getUid = isset($_GET['uid']) ? checkInput($_GET['uid']) : '';
 
